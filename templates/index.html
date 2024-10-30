@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Inline Poetry Editor</title>
+        <style>
+            body {
+                font-family: 'Georgia', serif;
+                line-height: 1.6;
+                margin: 0;
+                padding: 0;
+                background-color: #1a1a1a;
+                color: #cdcdcc;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 100vh;
+            }
+            
+            .main-container {
+                display: flex;
+                gap: 2rem;
+                max-width: 1400px;
+                width: 95%;
+                margin: 2rem auto;
+                position: relative;
+            }
+            
+            .poem-container {
+                flex: 2;
+                padding: 2rem;
+                background-color: #2c2c2c;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+                border-radius: 12px;
+                font-size: 1.3rem;
+                line-height: 1.5;
+            }
+            
+            .sidebar {
+                flex: 1;
+                max-width: 300px;
+                background-color: #2c2c2c;
+                border-radius: 12px;
+                padding: 1.5rem;
+                height: fit-content;
+                position: sticky;
+                top: 2rem;
+                min-height: 200px; /* Adjust this value as needed */
+                display: flex;
+                flex-direction: column;
+            }
+            
+            .sidebar-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 1rem;
+                padding-bottom: 0.5rem;
+                border-bottom: 1px solid #3d3d3d;
+            }
+            
+            .sidebar-title {
+                font-size: 1.2rem;
+                color: #9f9f9f;
+                margin: 0;
+                white-space: nowrap; 
+            }
+            
+            .refresh-button {
+                background-color: #3d3d3d;
+                border: none;
+                border-radius: 6px;
+                padding: 0.4rem 0.8rem;
+                color: #cdcdcc;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 0.3rem;
+                font-size: 0.9rem;
+                opacity: 0;
+                transform: translateX(10px);
+                transition: opacity 0.3s ease, transform 0.3s ease, background-color 0.2s ease;
+                pointer-events: none;
+            }
+            
+            .refresh-button.visible {
+                opacity: 1;
+                visibility: visible;
+                transform: translateX(0);
+                pointer-events: auto;
+            }
+            
+            .refresh-button:hover {
+                background-color: #4a4a4a;
+            }
+            
+            .refresh-button svg {
+                width: 14px;
+                height: 14px;
+                transform: scaleX(-1); /* Flip the icon horizontally */
+            }
+            
+            .refresh-button.loading {
+                opacity: 0.7;
+                cursor: wait;
+            }
+            
+            @keyframes spin {
+                from { transform: scaleX(-1) rotate(0deg); }
+                to { transform: scaleX(-1) rotate(-360deg); }
+            }
+            
+            .refresh-button.loading svg {
+                animation: spin 2s linear infinite;
+            }
+            
+            .suggestion-list {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+                flex: 1;
+            }
+            
+            .rhyme-char {
+                transition: all 0.3s ease;
+                cursor: pointer;
+                position: relative;
+                opacity: 0;
+                animation: fadeIn 0.3s ease forwards;
+            }
+            
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(2px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+            
+            .wipe-reveal .rhyme-char {
+                animation: wipeIn 0.5s ease forwards;
+            }
+
+            @keyframes wipeIn {
+                0% {
+                    opacity: 0;
+                    transform: translateX(-20px);
+                    filter: blur(2px);
+                }
+                100% {
+                    opacity: 1;
+                    transform: translateX(0);
+                    filter: blur(0);
+                }
+            }
+            
+            .rhyme-char:hover {
+                text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+            }
+            
+            .highlighted {
+                font-weight: bold;
+                text-shadow: 0 0 8px currentColor;
+            }
+
+            .editable {
+                outline: none;
+                white-space: pre-wrap;
+                word-break: break-word;
+            }
+            
+            .empty-state {
+                color: #666;
+                font-style: italic;
+                text-align: center;
+                padding: 1rem;
+                transition: opacity 0.3s ease;
+            }
+
+            .loading-text {
+                position: relative;
+                display: inline-block;
+            }
+
+            .loading-text::after {
+                content: '';
+                position: absolute;
+                bottom: -2px;
+                left: 0;
+                width: 100%;
+                height: 2px;
+                background: linear-gradient(90deg, #666, #999);
+                animation: loadingBar 2s infinite;
+                border-radius: 2px;
+            }
+
+            @keyframes loadingBar {
+                0% {
+                    width: 0;
+                    opacity: 0.5;
+                }
+                50% {
+                    width: 100%;
+                    opacity: 1;
+                }
+                100% {
+                    width: 0;
+                    opacity: 0.5;
+                }
+            }
+
+            .suggestion-chip {
+                display: inline-block;
+                padding: 0.5rem 1rem;
+                background-color: #3a3a3a;
+                border-radius: 8px;
+                font-size: 0.9rem;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                color: #cdcdcc;
+                opacity: 0;
+                transform: translateY(5px);
+            }
+                       
+            .suggestion-chip:hover {
+                background-color: #4a4a4a;
+            }
+
+            .suggestion-chip.visible {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            .suggestion-list {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+                min-height: 40px; /* Prevent layout shift */
+            }
+            
+            #poemDisplay[data-placeholder]:empty::before {
+                content: attr(data-placeholder);
+                color: #666;
+                font-style: italic;
+                opacity: 0.6;
+                pointer-events: none;
+            }
+            
+            #poemDisplay:empty::before {
+                display: block;
+            }
+            
+            #poemDisplay:not(:empty)::before {
+                display: none;
+            }
+            
+            #poemDisplay {
+                white-space: pre-wrap;
+                word-wrap: break-word;
+            }
+            
+            @keyframes spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+            
+            .refresh-button.loading svg {
+                animation: spin 1s linear infinite;
+            }
+            
+        </style>
+        <script>
+            let cursorPosition = 0;
+            let currentWord = null;
+            let previousSuggestions = {
+                rhymes: new Set(),
+                synonyms: new Set()
+            };
+
+            function saveCursorPosition() {
+                const selection = window.getSelection();
+                if (selection.rangeCount > 0) {
+                    const range = selection.getRangeAt(0);
+                    const preCursorRange = range.cloneRange();
+                    preCursorRange.selectNodeContents(document.getElementById("poemDisplay"));
+                    preCursorRange.setEnd(range.startContainer, range.startOffset);
+                    cursorPosition = preCursorRange.toString().length;
+                }
+            }
+
+            function restoreCursorPosition() {
+                const poemDisplay = document.getElementById("poemDisplay");
+                const range = document.createRange();
+                const selection = window.getSelection();
+                let charIndex = 0;
+                let foundStart = false;
+
+                function traverseNodes(node) {
+                    if (node.nodeType === Node.TEXT_NODE) {
+                        const nextCharIndex = charIndex + node.length;
+                        if (!foundStart && cursorPosition >= charIndex && cursorPosition <= nextCharIndex) {
+                            range.setStart(node, cursorPosition - charIndex);
+                            range.collapse(true);
+                            foundStart = true;
+                        }
+                        charIndex = nextCharIndex;
+                    } else {
+                        for (let i = 0; i < node.childNodes.length; i++) {
+                            traverseNodes(node.childNodes[i]);
+                            if (foundStart) break;
+                        }
+                    }
+                }
+
+                traverseNodes(poemDisplay);
+                selection.removeAllRanges();
+                selection.addRange(range);
+            }
+
+            function updatePoem() {
+                const poem = document.getElementById("poemDisplay").innerText;
+                const isLargePaste = poem.length > 500000000000; // doesnt work
+
+                saveCursorPosition();
+
+                fetch("/update_poem", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ poem: poem })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const poemDisplay = document.getElementById("poemDisplay");
+                    
+                    poemDisplay.innerHTML = data.poem_html;
+
+                    restoreCursorPosition();
+                    addHoverEffects();
+                });
+            }
+
+            function setButtonLoading(button, isLoading) {
+                if (isLoading) {
+                    button.classList.add('loading');
+                    button.disabled = true;
+                } else {
+                    button.classList.remove('loading');
+                    button.disabled = false;
+                }
+            }
+
+            async function refreshSuggestions(type) {
+                if (!currentWord) return;
+                
+                const button = document.querySelector(`#refresh${type}Button`);
+                const list = document.getElementById(`${type.toLowerCase()}List`);
+                
+                setButtonLoading(button, true);
+                
+                try {
+                    const response = await fetch("/get_suggestions", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({ word: currentWord })
+                    });
+                    
+                    const data = await response.json();
+                    const allSuggestions = type.toLowerCase() === 'rhymes' ? data.rhymes : data.synonyms;
+                    const typeKey = type.toLowerCase();
+
+                    if (allSuggestions && allSuggestions.length > 0) {
+                        // Get previously unseen suggestions
+                        const unseenSuggestions = allSuggestions.filter(word => 
+                            !previousSuggestions[typeKey].has(word)
+                        );
+
+                        let displaySuggestions;
+                        if (unseenSuggestions.length >= 5) {
+                            // If we have enough unseen suggestions, use those
+                            displaySuggestions = unseenSuggestions;
+                        } else {
+                            // If we're running low on unseen suggestions, reset and use all
+                            previousSuggestions[typeKey].clear();
+                            // Shuffle all available suggestions
+                            displaySuggestions = [...allSuggestions].sort(() => Math.random() - 0.5);
+                        }
+
+                        // Take first 10 for display
+                        const toDisplay = displaySuggestions.slice(0, 10);
+
+                        // Add to previously shown
+                        toDisplay.forEach(word => previousSuggestions[typeKey].add(word));
+
+                        // Update display with staggered animation
+                        list.innerHTML = toDisplay
+                            .map((word, index) => 
+                                `<div class="suggestion-chip" style="transition-delay: ${index * 50}ms">${word}</div>`
+                            )
+                            .join('');
+
+                        // Trigger animations
+                        setTimeout(() => {
+                            list.querySelectorAll('.suggestion-chip').forEach(chip => 
+                                chip.classList.add('visible')
+                            );
+                        }, 10);
+
+                        // Show/hide button based on remaining suggestions
+                        if (allSuggestions.length > toDisplay.length) {
+                            button.classList.add('visible');
+                        } else {
+                            button.classList.remove('visible');
+                        }
+                    } else {
+                        list.innerHTML = `<div class="empty-state">No more ${typeKey} available</div>`;
+                        button.classList.remove('visible');
+                    }
+                } catch (error) {
+                    console.error('Error refreshing suggestions:', error);
+                    list.innerHTML = `<div class="empty-state">Error loading ${type.toLowerCase()}</div>`;
+                } finally {
+                    setButtonLoading(button, false);
+                }
+            }
+
+            let initialLoadComplete = false;
+
+            function updateSidebars(word) {
+                if (word === currentWord) return;
+                
+                // Reset previous suggestions when switching words
+                previousSuggestions.rhymes.clear();
+                previousSuggestions.synonyms.clear();
+                currentWord = word;
+                
+                const rhymesList = document.getElementById("rhymesList");
+                const synonymsList = document.getElementById("synonymsList");
+                
+                // Only show loading animation on initial load
+                if (!initialLoadComplete) {
+                    rhymesList.innerHTML = '<div class="empty-state"><span class="loading-text">Searching rhymes</span></div>';
+                    synonymsList.innerHTML = '<div class="empty-state"><span class="loading-text">Searching synonyms</span></div>';
+                } else {
+                    // For subsequent loads, fade out existing content
+                    rhymesList.querySelectorAll('.suggestion-chip').forEach(chip => {
+                        chip.classList.remove('visible');
+                    });
+                    synonymsList.querySelectorAll('.suggestion-chip').forEach(chip => {
+                        chip.classList.remove('visible');
+                    });
+                }
+                
+                fetch("/get_suggestions", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ word: word })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Update rhymes sidebar
+                    const rhymesButton = document.getElementById("refreshRhymesButton");
+                    
+                    if (data.rhymes && data.rhymes.length > 0) {
+                        const shouldShowButton = data.rhymes.length > 5;
+                        
+                        const rhymeChips = data.rhymes
+                            .slice(0, 10)
+                            .map((word, index) => 
+                                `<div class="suggestion-chip" style="transition-delay: ${initialLoadComplete ? '0ms' : `${index * 50}ms`}">${word}</div>`
+                            )
+                            .join('');
+                        
+                        rhymesList.innerHTML = rhymeChips;
+                        
+                        // Quick transition for subsequent loads, staggered for initial
+                        setTimeout(() => {
+                            rhymesList.querySelectorAll('.suggestion-chip').forEach(chip => 
+                                chip.classList.add('visible')
+                            );
+                        }, 10);
+                        
+                        if (shouldShowButton) {
+                            rhymesButton.classList.add('visible');
+                        } else {
+                            rhymesButton.classList.remove('visible');
+                        }
+                    } else {
+                        rhymesList.innerHTML = '<div class="empty-state">No rhyming words found</div>';
+                        rhymesButton.classList.remove('visible');
+                    }
+                    
+                    // Update synonyms sidebar
+                    const synonymsButton = document.getElementById("refreshSynonymsButton");
+                    
+                    if (data.synonyms && data.synonyms.length > 0) {
+                        const shouldShowButton = data.synonyms.length > 5;
+                        
+                        const synonymChips = data.synonyms
+                            .slice(0, 10)
+                            .map((word, index) => 
+                                `<div class="suggestion-chip" style="transition-delay: ${initialLoadComplete ? '0ms' : `${index * 50}ms`}">${word}</div>`
+                            )
+                            .join('');
+                        
+                        synonymsList.innerHTML = synonymChips;
+                        
+                        setTimeout(() => {
+                            synonymsList.querySelectorAll('.suggestion-chip').forEach(chip => 
+                                chip.classList.add('visible')
+                            );
+                        }, 10);
+                        
+                        if (shouldShowButton) {
+                            synonymsButton.classList.add('visible');
+                        } else {
+                            synonymsButton.classList.remove('visible');
+                        }
+                    } else {
+                        synonymsList.innerHTML = '<div class="empty-state">No synonyms found</div>';
+                        synonymsButton.classList.remove('visible');
+                    }
+                    
+                    initialLoadComplete = true;
+                })
+                .catch(error => {
+                    console.error('Error getting suggestions:', error);
+                    rhymesList.innerHTML = '<div class="empty-state">Error loading rhymes</div>';
+                    synonymsList.innerHTML = '<div class="empty-state">Error loading synonyms</div>';
+                    document.getElementById('refreshRhymesButton').classList.remove('visible');
+                    document.getElementById('refreshSynonymsButton').classList.remove('visible');
+                });
+            }
+
+            function addHoverEffects() {
+                document.querySelectorAll('[data-word]').forEach(wordSpan => {
+                    wordSpan.addEventListener('mouseenter', function() {
+                        const word = this.dataset.word;
+                        if (word) {
+                            updateSidebars(word);
+                            
+                            const rhymeChars = this.querySelectorAll('.rhyme-char');
+                            const rhymeClass = Array.from(rhymeChars[0]?.classList || [])
+                                .find(cls => cls.startsWith('rhyme-group-'));
+                            
+                            if (rhymeClass) {
+                                document.querySelectorAll('.' + rhymeClass)
+                                    .forEach(el => el.classList.add('highlighted'));
+                            }
+                        }
+                    });
+                    
+                    wordSpan.addEventListener('mouseleave', function() {
+                        const rhymeChars = this.querySelectorAll('.rhyme-char');
+                        const rhymeClass = Array.from(rhymeChars[0]?.classList || [])
+                            .find(cls => cls.startsWith('rhyme-group-'));
+                        
+                        if (rhymeClass) {
+                            document.querySelectorAll('.' + rhymeClass)
+                                .forEach(el => el.classList.remove('highlighted'));
+                        }
+                    });
+                });
+            }
+
+            document.addEventListener('DOMContentLoaded', () => {
+                const poemDisplay = document.getElementById("poemDisplay");
+
+                poemDisplay.addEventListener('paste', (event) => {
+                    event.preventDefault();
+                    const text = (event.clipboardData || window.clipboardData).getData('text');
+                    document.execCommand('insertText', false, text);
+                });
+
+                addHoverEffects();
+
+                poemDisplay.addEventListener('input', () => {
+                    clearTimeout(window.poemUpdateTimer);
+                    window.poemUpdateTimer = setTimeout(updatePoem, 500);
+                });
+
+                poemDisplay.addEventListener('keyup', saveCursorPosition);
+                poemDisplay.addEventListener('mouseup', saveCursorPosition);
+                
+                // Add click handlers for refresh buttons
+                document.getElementById('refreshRhymesButton').addEventListener('click', () => refreshSuggestions('Rhymes'));
+                document.getElementById('refreshSynonymsButton').addEventListener('click', () => refreshSuggestions('Synonyms'));
+            });
+        </script>
+    </head>
+    <body>
+        <div class="main-container">
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <h2 class="sidebar-title">Rhymes</h2>
+                    <button id="refreshRhymesButton" class="refresh-button">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Randomize
+                    </button>
+                </div>
+                <div id="rhymesList" class="suggestion-list">
+                    <div class="empty-state">Hover over a rhyming word to see suggestions</div>
+                </div>
+            </div>
+            
+            <div class="poem-container">
+                <div id="poemDisplay" class="editable" contenteditable="true" data-placeholder="Start typing your poem here..."></div>
+            </div>
+            
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <h2 class="sidebar-title">Synonyms</h2>
+                    <button id="refreshSynonymsButton" class="refresh-button">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Randomize
+                    </button>
+                </div>
+                <div id="synonymsList" class="suggestion-list">
+                    <div class="empty-state">Hover over a rhyming word to see synonyms</div>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>
