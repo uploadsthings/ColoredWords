@@ -1,0 +1,7 @@
+Flask==2.3.3
+nltk==3.8.1
+pronouncing==0.2.0
+gunicorn==21.2.0
+flask-limiter==3.5.0
+flask-talisman==1.1.0
+Werkzeug==2.3.7
