@@ -1,1 +1,1 @@
-web: python -m gunicorn 'app:app' --bind 0.0.0.0:8080
+web: gunicorn 'app:app' --worker-tmp-dir /dev/shm --bind 0.0.0.0:8080
