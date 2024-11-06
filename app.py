@@ -511,7 +511,7 @@ def get_suggestions():
 @app.route('/')
 def index():
     try:
-        return render_template('index.html')
+        return render_template_string('index.html')
     except Exception as e:
         logger.error(f"Error rendering index: {e}")
         return "Error loading application", 500
