@@ -511,10 +511,16 @@ def get_suggestions():
 @app.route('/')
 def index():
     try:
+        logger.info("Attempting to render index.html")
+        # template exists
+        if not os.path.exists(os.path.join(app.template_folder, 'index.html')):
+            logger.error("index.html not found in templates folder")
+            return "Error: Template not found", 404
+            
         return render_template('index.html')
     except Exception as e:
-        logger.error(f"Error rendering index: {e}")
-        return "Error loading application", 500
+        logger.error(f"Error rendering index: {str(e)}", exc_info=True)
+        return f"Error loading application: {str(e)}", 500
 
 @app.route('/update_poem', methods=['POST'])
 def update_poem():
