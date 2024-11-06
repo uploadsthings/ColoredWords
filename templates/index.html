@@ -30,22 +30,104 @@
             .poem-container {
                 flex: 2;
                 padding: 2rem;
-                background-color: #2c2c2c;
-                box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+                box-shadow: -1.5px -1.5px rgb(107, 107, 107);
                 border-radius: 12px;
                 font-size: 1.3rem;
                 line-height: 1.5;
+                height: auto;
+                overflow: visible;
+                position: relative; 
+            }
+            
+            .poem-editor-container {
+                position: relative;
+                width: 100%;
+                height: 100%;
+                min-height: 300px;
+            }
+            
+            .poem-input {
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+                background: transparent;
+                color: transparent;
+                caret-color: white;
+                resize: none;
+                font-family: 'Georgia', serif;
+                font-size: 1.3rem;
+                line-height: 1.5;
+                border: none;
+                outline: none;
+                z-index: 1;
+                white-space: pre-wrap;
+                word-wrap: break-word;
+                padding: 0;
+                overflow: hidden; 
+            }
+            
+            .poem-display {
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+                white-space: pre-wrap;
+                word-wrap: break-word;
+                z-index: 2;
+                font-family: 'Georgia', serif;
+                font-size: 1.3rem;
+                line-height: 1.5;
+                pointer-events: none;
+                overflow: visible;  
+            }
+            
+            .poem-display .word-wrapper {
+                pointer-events: auto;
+                position: relative;
+                display: inline-block;
+                padding: 0 0.005rem;
+                z-index: 3;  /* Place above both layers */
+            }
+            
+            .poem-input::-webkit-scrollbar {
+                display: none;
+            }
+            
+            .poem-input {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+            
+            .word-wrapper .stress-markers {
+                position: absolute;
+                bottom: -1.9rem;
+                left: 0;
+                width: 100%;
+                display: flex;
+                pointer-events: none;
+            }
+            
+            .poem-display div {
+                min-height: 1.5em;
+            }
+            
+            .poem-editor-container[data-placeholder]:empty::before {
+                content: attr(data-placeholder);
+                color: #666;
+                font-style: italic;
+                opacity: 0.6;
+                position: absolute;
+                pointer-events: none;
             }
             
             .sidebar {
                 flex: 1;
                 max-width: 300px;
-                background-color: #2c2c2c;
                 border-radius: 12px;
                 padding: 1.5rem;
                 height: fit-content;
                 position: sticky;
-                top: 2rem;
                 min-height: 200px; /* Adjust this value as needed */
                 display: flex;
                 flex-direction: column;
@@ -57,19 +139,51 @@
                 justify-content: space-between;
                 margin-bottom: 1rem;
                 padding-bottom: 0.5rem;
-                border-bottom: 1px solid #3d3d3d;
+                border-bottom: 1px solid #8b8b8b;
             }
             
             .sidebar-title {
                 font-size: 1.2rem;
-                color: #9f9f9f;
+                color: #cecece;
                 margin: 0;
                 white-space: nowrap; 
             }
             
-            .refresh-button {
-                background-color: #3d3d3d;
+            .floating-settings {
+                position: absolute;
+                top: 1rem;
+                right: 1rem;
+                background-color: rgba(45, 45, 45, 0.6);
                 border: none;
+                border-radius: 6px;
+                padding: 0.5rem;
+                color: #cecece;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                opacity: 0.6;
+                backdrop-filter: blur(4px);
+                z-index: 10;
+            }
+
+            .floating-settings:hover {
+                opacity: 1;
+                color: #cdcdcc;
+                background-color: rgba(61, 61, 61, 0.9);
+                transform: scale(1.05);
+            }
+
+            .floating-settings svg {
+                width: 18px;
+                height: 18px;
+                stroke-width: 2px;
+            }
+
+            .refresh-button {
+                border: 1px solid rgba(205, 205, 204, 0.2);
+                background: transparent;
                 border-radius: 6px;
                 padding: 0.4rem 0.8rem;
                 color: #cdcdcc;
@@ -80,21 +194,218 @@
                 font-size: 0.9rem;
                 opacity: 0;
                 transform: translateX(10px);
-                transition: opacity 0.3s ease, transform 0.3s ease, background-color 0.2s ease;
+                transition: all 0.2s ease;
                 pointer-events: none;
             }
-            
+
             .refresh-button.visible {
                 opacity: 1;
                 visibility: visible;
                 transform: translateX(0);
                 pointer-events: auto;
             }
-            
+
             .refresh-button:hover {
-                background-color: #4a4a4a;
+                border-color: rgba(205, 205, 204, 0.4);
+                background: rgba(255, 255, 255, 0.05);
+            }
+
+            .settings-overlay {
+                position: fixed;
+                inset: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                backdrop-filter: blur(4px);
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.3s ease;
+                z-index: 100;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .settings-overlay.visible {
+                opacity: 1;
+                pointer-events: auto;
+            }
+
+            .sidebar:nth-child(3) {
+                background-color: transparent;
+                transition: background-color 0.3s ease;
             }
             
+            .sidebar:nth-child(3).content-hidden {
+                background-color: transparent;
+                box-shadow: none;
+            }
+            
+            .sidebar:nth-child(3).content-hidden .sidebar-content {
+                opacity: 0;
+                transform: translateX(30px);
+                pointer-events: none;
+            }
+
+            .sidebar-content {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                transition: opacity 0.3s ease, transform 0.3s ease;
+            }
+            
+            .sidebar-content.hidden {
+                opacity: 0;
+                transform: translateX(30px);
+                pointer-events: none;
+            }
+
+            .settings-panel {
+                display: none;
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: fit-content;
+                background-color: #1a1a1a;
+                border-radius: 12px;
+                padding: 1.5rem;
+                overflow-y: auto;
+                z-index: 1000;
+            }
+
+            .settings-panel.visible {
+                display: block; !important
+            }
+
+            .settings-content {
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+
+            .sidebar:nth-child(3).settings-open .sidebar-content {
+                opacity: 0;
+                pointer-events: none;
+                transform: translateX(-20px);
+            }
+            
+            .sidebar.hidden:not(:nth-child(3)) {
+                transform: translateX(-30px);
+                opacity: 0;
+            }
+            
+            .settings-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 1rem;
+                padding-bottom: 0.5rem;
+                border-bottom: 1px solid #8b8b8b;
+            }
+
+            .settings-overlay.visible .settings-panel {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+
+            .settings-title {
+                font-size: 1.2rem;
+                color: #cecece;
+                margin: 0;
+            }
+
+            .settings-content {
+                display: flex;
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+
+            .settings-section {
+                margin-bottom: 2rem;
+                user-select: none;
+            }
+            
+            .settings-section h3 {
+                margin: 0 0 1rem 0;
+                color: #cecece;
+                font-size: 1.1rem;
+            }
+
+            .setting-item {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 1rem;
+            }
+
+            .setting-item label {
+                color: #cdcdcc;
+            }
+
+            .setting-item label span {
+                color: #9f9f9f;
+                font-size: 0.9rem;
+            }
+
+            .setting-item:last-child {
+                border-bottom: none;
+            }
+            
+            .toggle-switch {
+                position: relative;
+                width: 44px;
+                height: 24px;
+            }
+
+            .toggle-switch input {
+                opacity: 0;
+                width: 0;
+                height: 0;
+            }
+
+            .toggle-slider {
+                position: absolute;
+                cursor: pointer;
+                inset: 0;
+                background-color: #4a4a4a;
+                transition: 0.3s;
+                border-radius: 24px;
+            }
+
+            .toggle-slider:before {
+                position: absolute;
+                content: "";
+                height: 18px;
+                width: 18px;
+                left: 3px;
+                bottom: 3px;
+                background-color: #cdcdcc;
+                transition: 0.3s;
+                border-radius: 50%;
+            }
+
+            input:checked + .toggle-slider {
+                background-color: #646cff;
+            }
+
+            input:checked + .toggle-slider:before {
+                transform: translateX(20px);
+            }
+
+            .sidebar {
+                transition: transform 0.3s ease, opacity 0.3s ease;
+            }
+
+            .sidebar.hidden {
+                transform: translateX(-100%);
+                opacity: 0;
+                pointer-events: none;
+            }
+
+            .sidebar-right.hidden {
+                transform: translateX(100%);
+            }
+                        
             .refresh-button svg {
                 width: 14px;
                 height: 14px;
@@ -126,7 +437,6 @@
                 transition: all 0.3s ease;
                 cursor: pointer;
                 position: relative;
-                opacity: 0;
                 animation: fadeIn 0.3s ease forwards;
             }
             
@@ -261,6 +571,8 @@
             #poemDisplay {
                 white-space: pre-wrap;
                 word-wrap: break-word;
+                position: relative;
+                overflow: visible; 
             }
             
             @keyframes spin {
@@ -270,6 +582,51 @@
             
             .refresh-button.loading svg {
                 animation: spin 1s linear infinite;
+            }
+
+            .word {
+                position: relative;
+                display: inline-block;
+                padding: 0 2px;
+            }
+            
+            .word-wrapper {
+                position: relative;
+                display: inline-block;
+                padding: 0 0.005rem; 
+            }
+
+            .word-text {
+                position: relative;
+                z-index: 1;  
+            }
+
+            .stress-markers {
+                position: absolute;
+                bottom: -2px;
+                left: 0;
+                width: 100%;
+                display: flex;
+                opacity: 1;
+            }
+
+            .stress-mark {
+                width: 40%;
+                height: 0.1rem;
+                background: rgba(255,255,255,0.1);
+            }
+
+            .stress-mark.stressed {
+                height: 0.1rem;
+                background: rgba(255,255,255,0.2);
+            }
+
+            .word-wrapper:hover .stress-mark {
+                background: rgba(255,255,255,0.2);
+            }
+
+            .word-wrapper:hover .stress-mark.stressed {
+                background: rgba(255,255,255,0.5);
             }
             
         </style>
@@ -319,30 +676,6 @@
                 traverseNodes(poemDisplay);
                 selection.removeAllRanges();
                 selection.addRange(range);
-            }
-
-            function updatePoem() {
-                const poem = document.getElementById("poemDisplay").innerText;
-                const isLargePaste = poem.length > 500000000000; // doesnt work
-
-                saveCursorPosition();
-
-                fetch("/update_poem", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({ poem: poem })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    const poemDisplay = document.getElementById("poemDisplay");
-                    
-                    poemDisplay.innerHTML = data.poem_html;
-
-                    restoreCursorPosition();
-                    addHoverEffects();
-                });
             }
 
             function setButtonLoading(button, isLoading) {
@@ -444,6 +777,9 @@
                 const rhymesList = document.getElementById("rhymesList");
                 const synonymsList = document.getElementById("synonymsList");
                 
+                // Get the current poem text
+                const poemText = document.getElementById("poemDisplay").innerText;
+                
                 // Only show loading animation on initial load
                 if (!initialLoadComplete) {
                     rhymesList.innerHTML = '<div class="empty-state"><span class="loading-text">Searching rhymes</span></div>';
@@ -463,7 +799,10 @@
                     headers: {
                         "Content-Type": "application/json"
                     },
-                    body: JSON.stringify({ word: word })
+                    body: JSON.stringify({ 
+                        word: word,
+                        poem: poemText
+                    })
                 })
                 .then(response => response.json())
                 .then(data => {
@@ -546,52 +885,244 @@
                     wordSpan.addEventListener('mouseenter', function() {
                         const word = this.dataset.word;
                         if (word) {
+                            // Use the existing updateSidebars function
                             updateSidebars(word);
-                            
-                            const rhymeChars = this.querySelectorAll('.rhyme-char');
-                            const rhymeClass = Array.from(rhymeChars[0]?.classList || [])
-                                .find(cls => cls.startsWith('rhyme-group-'));
-                            
-                            if (rhymeClass) {
-                                document.querySelectorAll('.' + rhymeClass)
-                                    .forEach(el => el.classList.add('highlighted'));
-                            }
+                            highlightRhymeGroup(this);
                         }
                     });
                     
                     wordSpan.addEventListener('mouseleave', function() {
-                        const rhymeChars = this.querySelectorAll('.rhyme-char');
-                        const rhymeClass = Array.from(rhymeChars[0]?.classList || [])
-                            .find(cls => cls.startsWith('rhyme-group-'));
+                        unhighlightRhymeGroup(this);
+                    });
+                    
+                    // Word replacement on suggestion click
+                    wordSpan.addEventListener('click', function() {
+                        const word = this.dataset.word;
+                        if (!word) return;
                         
-                        if (rhymeClass) {
-                            document.querySelectorAll('.' + rhymeClass)
-                                .forEach(el => el.classList.remove('highlighted'));
-                        }
+                        const suggestionChips = document.querySelectorAll('.suggestion-chip');
+                        suggestionChips.forEach(chip => {
+                            chip.addEventListener('click', () => {
+                                const newWord = chip.textContent;
+                                const poemInput = document.getElementById('poemInput');
+                                const text = poemInput.value;
+                                const regex = new RegExp(`\\b${word}\\b`);
+                                poemInput.value = text.replace(regex, newWord);
+                                updatePoem();
+                            });
+                        });
                     });
                 });
             }
 
-            document.addEventListener('DOMContentLoaded', () => {
+            
+            function highlightRhymeGroup(element) {
+                const rhymeChars = element.querySelectorAll('.rhyme-char');
+                const rhymeClass = Array.from(rhymeChars[0]?.classList || [])
+                    .find(cls => cls.startsWith('rhyme-group-'));
+                
+                if (rhymeClass) {
+                    document.querySelectorAll('.' + rhymeClass)
+                        .forEach(el => el.classList.add('highlighted'));
+                }
+            }
+        
+            function unhighlightRhymeGroup(element) {
+                const rhymeChars = element.querySelectorAll('.rhyme-char');
+                const rhymeClass = Array.from(rhymeChars[0]?.classList || [])
+                    .find(cls => cls.startsWith('rhyme-group-'));
+                
+                if (rhymeClass) {
+                    document.querySelectorAll('.' + rhymeClass)
+                        .forEach(el => el.classList.remove('highlighted'));
+                }
+            }
+            
+            function adjustPoemDisplayHeight() {
                 const poemDisplay = document.getElementById("poemDisplay");
+                const words = poemDisplay.querySelectorAll(".word-wrapper");
+            
+                if (words.length > 0) {
+                    const lastWord = words[words.length - 1];
+                    const poemTop = poemDisplay.getBoundingClientRect().top;
+                    const lastWordBottom = lastWord.getBoundingClientRect().bottom;
+                    
+                    const newHeight = lastWordBottom - poemTop;
+            
+                    poemDisplay.style.height = newHeight + "px";
+                }
+            }
+            
+            document.addEventListener('DOMContentLoaded', () => {
+                const settingsPanel = document.getElementById('settingsPanel');
+                const openSettingsBtn = document.getElementById('openSettings');
+                const closeSettingsBtn = document.getElementById('closeSettings');
+                const synonymsSidebar = document.querySelector('.sidebar-right');
+                
+                const settings = {
+                    stressMarkersOpacity: 100,
+                    rhymeHighlighting: 100,
+                    showRhymesSidebar: 100,
+                    showSynonymsSidebar: 100,
+                    autoCapitalize: 0,
+                    analysisSpeed: 100
+                };
 
-                poemDisplay.addEventListener('paste', (event) => {
-                    event.preventDefault();
-                    const text = (event.clipboardData || window.clipboardData).getData('text');
-                    document.execCommand('insertText', false, text);
+                // open/close settings
+                openSettingsBtn.addEventListener('click', () => {
+                    if (settingsPanel.classList.contains('visible')) {
+                        settingsPanel.classList.remove('visible');
+                        synonymsSidebar?.classList.remove('settings-open');
+                    } else {
+                        settingsPanel.classList.add('visible');
+                        synonymsSidebar?.classList.add('settings-open');
+                    }
+                });
+                
+                document.querySelectorAll('.toggle-switch input').forEach(toggle => {
+                    toggle.addEventListener('change', function() {
+                        const setting = toggle.id === 'highlightRhymes' ? 'rhymeHighlighting' : 
+                                        toggle.id === 'showStressMarkers' ? 'stressMarkersOpacity' : toggle.id;
+                        const value = this.checked ? 100 : 0;
+                        settings[setting] = value;
+                        applySettings(setting, value);
+                    });
                 });
 
-                addHoverEffects();
+                function applySettings(setting, value) {
+                    console.log(`Applying setting ${setting} with value ${value}`);
+                    settings[setting] = parseInt(value);
 
-                poemDisplay.addEventListener('input', () => {
-                    clearTimeout(window.poemUpdateTimer);
-                    window.poemUpdateTimer = setTimeout(updatePoem, 500);
+                    switch(setting) {
+                        case 'stressMarkersOpacity':
+                            document.querySelectorAll('.stress-markers').forEach(el => {
+                                el.style.opacity = value / 100;
+                            });
+                            break;
+                        case 'rhymeHighlighting':
+                            console.log("Applying rhyme highlighting with value:", value);
+                            document.querySelectorAll('.rhyme-char').forEach(el => {
+                                if (value === 100) {
+                                    if (el.dataset.originalColor) {
+                                        el.style.color = el.dataset.originalColor;
+                                    }
+                                } else {
+                                    if (!el.dataset.originalColor) {
+                                        el.dataset.originalColor = window.getComputedStyle(el).color;
+                                    }
+                                    el.style.color = '#cdcdcc';
+                                }
+                            });
+                            break;
+                        case 'showRhymesSidebar':
+                            const rhymesSidebar = document.querySelector('.sidebar:not(.sidebar-right)');
+                            if (value <= 50) {
+                                rhymesSidebar?.classList.add('hidden');
+                            } else {
+                                rhymesSidebar?.classList.remove('hidden');
+                            }
+                            break;
+                        case 'showSynonymsSidebar':
+                            const synonymsSidebar = document.querySelector('.sidebar:nth-child(3) .sidebar-content');
+                            if (value <= 50) {
+                                synonymsSidebar?.classList.add('hidden');
+                            } else {
+                                synonymsSidebar?.classList.remove('hidden');
+                            }
+                            break;
+                        case 'autoCapitalize':
+                            // Update poem if needed
+                            if (value > 50) {
+                                updatePoem(true);
+                            }
+                            break;
+                        case 'analysisSpeed':
+                            window.analysisDebounce = value <= 50 ? 1000 : 100;
+                            break;
+                    }
+
+                    localStorage.setItem('poemEditorSettings', JSON.stringify(settings));
+                }
+
+                const savedSettings = localStorage.getItem('poemEditorSettings');
+                if (savedSettings) {
+                    const parsed = JSON.parse(savedSettings);
+                    Object.entries(parsed).forEach(([setting, value]) => {
+                        const slider = document.querySelector(`[data-setting="${setting}"]`);
+                        if (slider) {
+                            slider.value = value;
+                            const event = new Event('input');
+                            slider.dispatchEvent(event);
+                        }
+                    });
+                }
+            });
+
+            document.addEventListener('DOMContentLoaded', () => {
+                adjustPoemDisplayHeight();
+                const poemInput = document.getElementById('poemInput');
+                const poemDisplay = document.getElementById('poemDisplay');
+                let updateTimer;
+                let currentWord = null;
+                let previousSuggestions = {
+                    rhymes: new Set(),
+                    synonyms: new Set()
+                };
+            
+                function updatePoem() {
+                    const poemInput = document.getElementById('poemInput');
+                    const poemDisplay = document.getElementById('poemDisplay');
+                    const poem = poemInput.value;
+                    
+                    const observer = new MutationObserver(adjustPoemDisplayHeight);
+                    observer.observe(document.getElementById("poemDisplay"), { childList: true, subtree: true });
+                    
+                    const selection = {
+                        start: poemInput.selectionStart,
+                        end: poemInput.selectionEnd
+                    };
+                    
+                    fetch("/update_poem", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({ poem: poem })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        poemDisplay.innerHTML = data.poem_html;
+                        // Restore selection
+                        poemInput.setSelectionRange(selection.start, selection.end);
+                        poemInput.focus();
+                        addHoverEffects();  // Re-attach hover handlers
+                    });
+                }
+            
+                // debounce for inputs
+                poemInput.addEventListener('input', () => {
+                    clearTimeout(updateTimer);
+                    updateTimer = setTimeout(updatePoem, 100);
+                });
+            
+                // paste handling
+                poemInput.addEventListener('paste', (event) => {
+                    event.preventDefault();
+                    const text = (event.clipboardData || window.clipboardData).getData('text');
+                    
+                    const start = poemInput.selectionStart;
+                    const end = poemInput.selectionEnd;
+                    const value = poemInput.value;
+                    
+                    poemInput.value = value.slice(0, start) + text + value.slice(end);
+                    poemInput.selectionStart = poemInput.selectionEnd = start + text.length;
+                    
+                    updatePoem();
                 });
 
                 poemDisplay.addEventListener('keyup', saveCursorPosition);
                 poemDisplay.addEventListener('mouseup', saveCursorPosition);
                 
-                // Add click handlers for refresh buttons
                 document.getElementById('refreshRhymesButton').addEventListener('click', () => refreshSuggestions('Rhymes'));
                 document.getElementById('refreshSynonymsButton').addEventListener('click', () => refreshSuggestions('Synonyms'));
             });
@@ -615,22 +1146,100 @@
             </div>
             
             <div class="poem-container">
-                <div id="poemDisplay" class="editable" contenteditable="true" data-placeholder="Start typing your poem here..."></div>
+                <button class="floating-settings" id="openSettings">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z" />
+                    </svg>
+                </button>
+                <div class="poem-editor-container">
+                    <!-- textarea is invisible but handles all input -->
+                    <textarea 
+                        id="poemInput"
+                        class="poem-input"
+                        spellcheck="false"
+                        data-placeholder="Start typing your poem here..."></textarea>
+                    
+                    <div id="poemDisplay" class="poem-display"></div>
+                </div>
             </div>
+
             
             <div class="sidebar">
-                <div class="sidebar-header">
-                    <h2 class="sidebar-title">Synonyms</h2>
-                    <button id="refreshSynonymsButton" class="refresh-button">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                        </svg>
-                        Randomize
-                    </button>
+                <div class="sidebar-content">
+                    <div class="sidebar-header">
+                        <h2 class="sidebar-title">Synonyms</h2>
+                        <button id="refreshSynonymsButton" class="refresh-button">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            Randomize
+                        </button>
+                    </div>
+                    <div id="synonymsList" class="suggestion-list">
+                        <div class="empty-state">Hover over a rhyming word to see synonyms</div>
+                    </div>
                 </div>
-                <div id="synonymsList" class="suggestion-list">
-                    <div class="empty-state">Hover over a rhyming word to see synonyms</div>
-                </div>
+                
+                <div class="settings-panel" id="settingsPanel">
+                    <div class="settings-header">
+                        <h2 class="settings-title">Editor Settings</h2>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>Display</h3>
+                        <div class="setting-item">
+                            <label>Show Stress Markers</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="showStressMarkers" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label>Rhyme Highlighting</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="highlightRhymes" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>Sidebars</h3>
+                        <div class="setting-item">
+                            <label>Show Rhymes Sidebar</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="showRhymesSidebar" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label>Show Synonyms Sidebar</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="showSynonymsSidebar" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>Editor</h3>
+                        <div class="setting-item">
+                            <label>Auto-Capitalize Lines</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="autoCapitalize">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label>Real-time Analysis</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="realtimeAnalysis" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div> 
             </div>
         </div>
     </body>
